@@ -6,11 +6,19 @@
 
 local fs = require("filesystem")
 
-local server
-
 local hivemind = {}
 
-function hivemind.run(code)
+function handshake(server, token)
+    modem.send(server, port, "handshake:" .. token)
+
+    _, _, _, port, _, checked = event.pull("modem_message")
+    if checked == "valid" then
+        return true
+    else
+        return false
+end
+
+function hivemind.run(code, server, token)
     local serializedFunction = string.dump(code)
     pcall(load(serializedFunction))
 
@@ -19,7 +27,7 @@ function hivemind.run(code)
     -- upload code to server
 end
 
-function hivemind.runFile(path)
+function hivemind.runFile(path, server, token)
     if fs.exists(path) and fs.isDirectory(path) then
         local file = io.open(path, "r")
         local code = file:read("*all")
@@ -27,13 +35,19 @@ function hivemind.runFile(path)
     end
 
     -- check if connection is still alive
-
+    modem.send(server, port, "handshake:" .. token)
     -- upload code to server
 end
 
-function hivemind.connect(serveraddress)
+function hivemind.connect(server)
     -- test connection
-    server = serveraddress
+    _, _, _, port, _, message = event.pull("modem_message")
+
+    -- probably have add more meta info to the message
+    local token = message
+
+    -- return the access token
+    return token
 end
 
 return hivemind
